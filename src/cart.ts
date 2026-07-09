@@ -48,6 +48,10 @@ export function subtotal(cart: Cart): Money {
   return cart.items.reduce((sum, line) => add(sum, lineTotal(line)), zero(cart.currency));
 }
 
+export function isEmpty(cart: Cart): boolean {
+  return cart.items.length === 0;
+}
+
 export function itemCount(cart: Cart): number {
   return cart.items.reduce((count, line) => count + line.quantity, 0);
 }

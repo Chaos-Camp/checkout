@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { addItem, createCart } from "./cart.js";
 import { money } from "./money.js";
-import { taxRate, total } from "./pricing.js";
+import { taxRate, total, type Coupon } from "./pricing.js";
 
 const cartOf = (cents: number) =>
   addItem(createCart("USD"), { sku: "SKU-1", name: "Item", unitPrice: money(cents, "USD") });
+
+const tenOff: Coupon = { kind: "percent", code: "TIDE10", percent: 10 };
+const fiveDollars: Coupon = { kind: "fixed", code: "WELCOME5", amount: money(500, "USD") };
 
 describe("pricing", () => {
   describe("tax", () => {
@@ -14,14 +17,34 @@ describe("pricing", () => {
     });
 
     it("adds tax to the subtotal", () => {
-      const breakdown = total(cartOf(10_000), "US-CA");
+      const breakdown = total(cartOf(10_000), null, "US-CA");
       expect(breakdown.subtotal.amount).toBe(10_000);
       expect(breakdown.tax.amount).toBe(725);
       expect(breakdown.total.amount).toBe(10_725);
     });
 
     it("rounds tax to the nearest cent", () => {
-      expect(total(cartOf(1999), "US-NY").tax.amount).toBe(80);
+      expect(total(cartOf(1999), null, "US-NY").tax.amount).toBe(80);
+    });
+  });
+
+  describe("coupons", () => {
+    it("takes a percentage off", () => {
+      const breakdown = total(cartOf(10_000), tenOff, "US-NY");
+      expect(breakdown.discount.amount).toBe(1000);
+      expect(breakdown.total.amount).toBe(9400);
+    });
+
+    it("takes a fixed amount off", () => {
+      const breakdown = total(cartOf(10_000), fiveDollars, "US-NY");
+      expect(breakdown.discount.amount).toBe(500);
+      expect(breakdown.total.amount).toBe(9900);
+    });
+
+    it("charges nothing for an empty cart", () => {
+      const breakdown = total(createCart("USD"), fiveDollars, "US-CA");
+      expect(breakdown.total.amount).toBe(0);
+      expect(breakdown.discount.amount).toBe(0);
     });
   });
 });

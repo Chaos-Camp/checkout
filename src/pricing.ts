@@ -1,5 +1,5 @@
-import { subtotal, type Cart } from "./cart.js";
-import { add, multiply, type Money } from "./money.js";
+import { isEmpty, subtotal, type Cart } from "./cart.js";
+import { add, multiply, subtract, zero, type Money } from "./money.js";
 
 export type Region = "US-CA" | "US-NY" | "GB" | "DE";
 
@@ -11,8 +11,13 @@ export const TAX_RATES: Readonly<Record<Region, number>> = {
   DE: 0.19,
 };
 
+export type Coupon =
+  | { readonly kind: "percent"; readonly code: string; readonly percent: number }
+  | { readonly kind: "fixed"; readonly code: string; readonly amount: Money };
+
 export interface PriceBreakdown {
   readonly subtotal: Money;
+  readonly discount: Money;
   readonly tax: Money;
   readonly total: Money;
 }
@@ -21,8 +26,24 @@ export function taxRate(region: Region): number {
   return TAX_RATES[region];
 }
 
-export function total(cart: Cart, region: Region): PriceBreakdown {
+/** How much a coupon takes off the given amount. */
+export function discountFor(coupon: Coupon, base: Money): Money {
+  switch (coupon.kind) {
+    case "percent":
+      return multiply(base, coupon.percent / 100);
+    case "fixed":
+      return coupon.amount;
+  }
+}
+
+export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceBreakdown {
   const sub = subtotal(cart);
+  if (isEmpty(cart)) {
+    const none = zero(cart.currency);
+    return { subtotal: sub, discount: none, tax: none, total: none };
+  }
+
   const tax = multiply(sub, taxRate(region));
-  return { subtotal: sub, tax, total: add(sub, tax) };
+  const discount = coupon ? discountFor(coupon, sub) : zero(cart.currency);
+  return { subtotal: sub, discount, tax, total: subtract(add(sub, tax), discount) };
 }
