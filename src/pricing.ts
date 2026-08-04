@@ -1,5 +1,5 @@
 import { isEmpty, subtotal, type Cart } from "./cart.js";
-import { add, multiply, subtract, zero, type Money } from "./money.js";
+import { add, min, multiply, subtract, zero, type Money } from "./money.js";
 
 export type Region = "US-CA" | "US-NY" | "GB" | "DE";
 
@@ -26,13 +26,13 @@ export function taxRate(region: Region): number {
   return TAX_RATES[region];
 }
 
-/** How much a coupon takes off the given amount. */
+/** How much a coupon takes off the given amount. Never more than the amount itself. */
 export function discountFor(coupon: Coupon, base: Money): Money {
   switch (coupon.kind) {
     case "percent":
       return multiply(base, coupon.percent / 100);
     case "fixed":
-      return coupon.amount;
+      return min(coupon.amount, base);
   }
 }
 

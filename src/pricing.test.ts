@@ -41,6 +41,12 @@ describe("pricing", () => {
       expect(breakdown.total.amount).toBe(9900);
     });
 
+    it("never discounts more than the subtotal", () => {
+      const breakdown = total(cartOf(300), fiveDollars, "US-NY");
+      expect(breakdown.discount.amount).toBe(300);
+      expect(breakdown.total.amount).toBeGreaterThanOrEqual(0);
+    });
+
     it("charges nothing for an empty cart", () => {
       const breakdown = total(createCart("USD"), fiveDollars, "US-CA");
       expect(breakdown.total.amount).toBe(0);
