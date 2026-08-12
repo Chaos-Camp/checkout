@@ -37,6 +37,10 @@ export function discountFor(coupon: Coupon, base: Money): Money {
 }
 
 export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceBreakdown {
+  if (coupon?.kind === "fixed" && coupon.amount.currency !== cart.currency) {
+    throw new TypeError(`Coupon ${coupon.code} is in ${coupon.amount.currency}, cart is in ${cart.currency}`);
+  }
+
   const sub = subtotal(cart);
   if (isEmpty(cart)) {
     const none = zero(cart.currency);

@@ -47,6 +47,11 @@ describe("pricing", () => {
       expect(breakdown.total.amount).toBeGreaterThanOrEqual(0);
     });
 
+    it("rejects a fixed coupon in another currency", () => {
+      const euros: Coupon = { kind: "fixed", code: "EURO5", amount: money(500, "EUR") };
+      expect(() => total(cartOf(10_000), euros, "US-NY")).toThrow(/EURO5 is in EUR/);
+    });
+
     it("charges nothing for an empty cart", () => {
       const breakdown = total(createCart("USD"), fiveDollars, "US-CA");
       expect(breakdown.total.amount).toBe(0);

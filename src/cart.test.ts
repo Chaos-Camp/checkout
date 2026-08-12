@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { addItem, createCart, itemCount, removeItem, setQuantity, subtotal } from "./cart.js";
+import {
+  MAX_QUANTITY,
+  addItem,
+  createCart,
+  itemCount,
+  removeItem,
+  setQuantity,
+  subtotal,
+} from "./cart.js";
 import { money } from "./money.js";
 
 const mug = { sku: "MUG-01", name: "Tide mug", unitPrice: money(1800, "USD") };
@@ -17,6 +25,18 @@ describe("cart", () => {
       const cart = addItem(createCart("USD"), mug, 2);
       expect(itemCount(cart)).toBe(2);
       expect(subtotal(cart).amount).toBe(3600);
+    });
+
+    it("merges a repeated sku into one line", () => {
+      const cart = addItem(addItem(createCart("USD"), mug, 2), mug, 3);
+      expect(cart.items).toHaveLength(1);
+      expect(itemCount(cart)).toBe(5);
+    });
+
+    it("caps a line at MAX_QUANTITY", () => {
+      expect(() => addItem(createCart("USD"), mug, MAX_QUANTITY)).not.toThrow();
+      expect(() => addItem(createCart("USD"), mug, MAX_QUANTITY + 1)).toThrow(RangeError);
+      expect(() => addItem(addItem(createCart("USD"), mug, 60), mug, 40)).toThrow(RangeError);
     });
 
     it("rejects items priced in another currency", () => {

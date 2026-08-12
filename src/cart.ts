@@ -7,6 +7,9 @@ export interface LineItem {
   readonly quantity: number;
 }
 
+/** Most a single line can hold; larger orders go through wholesale. */
+export const MAX_QUANTITY = 99;
+
 /** Carts are immutable: every operation returns a new cart. */
 export interface Cart {
   readonly currency: CurrencyCode;
@@ -21,6 +24,10 @@ export function addItem(cart: Cart, item: Omit<LineItem, "quantity">, quantity =
   assertQuantity(quantity);
   if (item.unitPrice.currency !== cart.currency) {
     throw new TypeError(`Cannot add a ${item.unitPrice.currency} item to a ${cart.currency} cart`);
+  }
+  const existing = cart.items.find((line) => line.sku === item.sku);
+  if (existing) {
+    return setQuantity(cart, item.sku, existing.quantity + quantity);
   }
   return { ...cart, items: [...cart.items, { ...item, quantity }] };
 }
@@ -57,7 +64,7 @@ export function itemCount(cart: Cart): number {
 }
 
 function assertQuantity(quantity: number): void {
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    throw new RangeError(`Quantity must be a positive whole number, got ${quantity}`);
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
+    throw new RangeError(`Quantity must be a whole number from 1 to ${MAX_QUANTITY}, got ${quantity}`);
   }
 }
