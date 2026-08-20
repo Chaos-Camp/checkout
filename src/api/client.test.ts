@@ -42,6 +42,23 @@ describe("submitOrder", () => {
     });
   });
 
+  describe("on conflict", () => {
+    it("retries once when the idempotency key is in flight", async () => {
+      const fetch = vi
+        .fn<FetchLike>()
+        .mockResolvedValueOnce(reply(409))
+        .mockResolvedValueOnce(reply(201, confirmation));
+      await expect(submitOrder(order, options(fetch))).resolves.toEqual(confirmation);
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives up after the second 409", async () => {
+      const fetch = vi.fn<FetchLike>().mockImplementation(async () => reply(409));
+      await expect(submitOrder(order, options(fetch))).rejects.toMatchObject({ status: 409 });
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("on failure", () => {
     it("throws a CheckoutApiError with the status", async () => {
       const fetch = vi.fn<FetchLike>().mockResolvedValue(reply(422));
