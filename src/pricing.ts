@@ -1,12 +1,14 @@
 import { isEmpty, subtotal, type Cart } from "./cart.js";
 import { add, min, multiply, subtract, zero, type Money } from "./money.js";
 
-export type Region = "US-CA" | "US-NY" | "GB" | "DE";
+export type Region = "US-CA" | "US-NY" | "US-OR" | "CA-ON" | "GB" | "DE";
 
 /** Sales tax or VAT applied at checkout, as a fraction of the taxable amount. */
 export const TAX_RATES: Readonly<Record<Region, number>> = {
   "US-CA": 0.0725,
   "US-NY": 0.04,
+  "US-OR": 0, // Oregon has no sales tax
+  "CA-ON": 0.13, // HST
   GB: 0.2,
   DE: 0.19,
 };

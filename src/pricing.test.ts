@@ -14,6 +14,13 @@ describe("pricing", () => {
     it("knows each region's rate", () => {
       expect(taxRate("US-CA")).toBe(0.0725);
       expect(taxRate("GB")).toBe(0.2);
+      expect(taxRate("CA-ON")).toBe(0.13);
+    });
+
+    it("charges no tax in Oregon", () => {
+      const breakdown = total(cartOf(10_000), null, "US-OR");
+      expect(breakdown.tax.amount).toBe(0);
+      expect(breakdown.total.amount).toBe(10_000);
     });
 
     it("adds tax to the subtotal", () => {
