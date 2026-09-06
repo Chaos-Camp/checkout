@@ -9,9 +9,12 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "mutate": "stryker run"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
   },
