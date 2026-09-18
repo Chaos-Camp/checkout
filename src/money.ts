@@ -1,9 +1,9 @@
 /**
- * Money is always held in integer minor units (cents, pence) so that
+ * Money is always held in integer minor units (cents, pence; yen have none) so that
  * arithmetic never drifts. Convert to and from major units only at the edges.
  */
 
-export type CurrencyCode = "USD" | "EUR" | "GBP" | "CAD";
+export type CurrencyCode = "USD" | "EUR" | "GBP" | "CAD" | "JPY";
 
 export interface Money {
   /** Integer amount in the currency's minor unit. */
@@ -16,6 +16,7 @@ const MINOR_UNIT_DIGITS: Record<CurrencyCode, number> = {
   EUR: 2,
   GBP: 2,
   CAD: 2,
+  JPY: 0,
 };
 
 export function minorUnitDigits(currency: CurrencyCode): number {

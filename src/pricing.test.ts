@@ -17,6 +17,13 @@ describe("pricing", () => {
       expect(taxRate("CA-ON")).toBe(0.13);
     });
 
+    it("taxes yen carts in Japan", () => {
+      const cart = addItem(createCart("JPY"), { sku: "MUG-01", name: "Tide mug", unitPrice: money(2400, "JPY") });
+      const breakdown = total(cart, null, "JP");
+      expect(breakdown.tax).toEqual({ amount: 240, currency: "JPY" });
+      expect(breakdown.total.amount).toBe(2640);
+    });
+
     it("charges no tax in Oregon", () => {
       const breakdown = total(cartOf(10_000), null, "US-OR");
       expect(breakdown.tax.amount).toBe(0);

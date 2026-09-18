@@ -14,6 +14,7 @@ describe("money", () => {
     it("converts from major units", () => {
       expect(fromMajor(12.5, "USD").amount).toBe(1250);
       expect(fromMajor(0.1 + 0.2, "EUR").amount).toBe(30);
+      expect(fromMajor(1500, "JPY").amount).toBe(1500);
     });
 
     it("has a zero for every currency", () => {
