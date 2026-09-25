@@ -1,4 +1,4 @@
-import { isEmpty, subtotal, type Cart } from "./cart.js";
+import { isEmpty, subtotal, taxableSubtotal, type Cart } from "./cart.js";
 import { add, min, multiply, subtract, zero, type Money } from "./money.js";
 
 export type Region = "US-CA" | "US-NY" | "US-OR" | "CA-ON" | "GB" | "DE" | "JP";
@@ -50,7 +50,7 @@ export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceB
     return { subtotal: sub, discount: none, tax: none, total: none };
   }
 
-  const tax = multiply(sub, taxRate(region));
+  const tax = multiply(taxableSubtotal(cart), taxRate(region));
   const discount = coupon ? discountFor(coupon, sub) : zero(cart.currency);
   return { subtotal: sub, discount, tax, total: subtract(add(sub, tax), discount) };
 }

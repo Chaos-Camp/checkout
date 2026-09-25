@@ -5,6 +5,8 @@ export interface LineItem {
   readonly name: string;
   readonly unitPrice: Money;
   readonly quantity: number;
+  /** Gift cards and donations are not taxed. Defaults to true. */
+  readonly taxable?: boolean;
 }
 
 /** Most a single line can hold; larger orders go through wholesale. */
@@ -53,6 +55,13 @@ export function lineTotal(line: LineItem): Money {
 
 export function subtotal(cart: Cart): Money {
   return cart.items.reduce((sum, line) => add(sum, lineTotal(line)), zero(cart.currency));
+}
+
+/** The part of the subtotal that sales tax or VAT applies to. */
+export function taxableSubtotal(cart: Cart): Money {
+  return cart.items
+    .filter((line) => line.taxable !== false)
+    .reduce((sum, line) => add(sum, lineTotal(line)), zero(cart.currency));
 }
 
 export function isEmpty(cart: Cart): boolean {

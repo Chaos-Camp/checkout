@@ -7,6 +7,7 @@ import {
   removeItem,
   setQuantity,
   subtotal,
+  taxableSubtotal,
 } from "./cart.js";
 import { money } from "./money.js";
 
@@ -67,6 +68,15 @@ describe("cart", () => {
       cart = removeItem(cart, "MUG-01");
       expect(cart.items.map((line) => line.sku)).toEqual(["TOTE-02"]);
       expect(subtotal(cart).amount).toBe(2450);
+    });
+  });
+
+  describe("tax-exempt items", () => {
+    it("leaves gift cards out of the taxable subtotal", () => {
+      const giftCard = { sku: "GIFT-25", name: "Gift card", unitPrice: money(2500, "USD"), taxable: false };
+      const cart = addItem(addItem(createCart("USD"), mug), giftCard);
+      expect(subtotal(cart).amount).toBe(4300);
+      expect(taxableSubtotal(cart).amount).toBe(1800);
     });
   });
 });

@@ -24,6 +24,13 @@ describe("pricing", () => {
       expect(breakdown.total.amount).toBe(2640);
     });
 
+    it("does not tax gift cards", () => {
+      const giftCard = { sku: "GIFT-25", name: "Gift card", unitPrice: money(2500, "USD"), taxable: false };
+      const breakdown = total(addItem(cartOf(10_000), giftCard), null, "US-CA");
+      expect(breakdown.subtotal.amount).toBe(12_500);
+      expect(breakdown.tax.amount).toBe(725);
+    });
+
     it("charges no tax in Oregon", () => {
       const breakdown = total(cartOf(10_000), null, "US-OR");
       expect(breakdown.tax.amount).toBe(0);
