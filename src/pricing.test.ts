@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addItem, createCart } from "./cart.js";
 import { money } from "./money.js";
-import { taxRate, total, type Coupon } from "./pricing.js";
+import { taxRate, total, validateCoupon, type Coupon } from "./pricing.js";
 
 const cartOf = (cents: number) =>
   addItem(createCart("USD"), { sku: "SKU-1", name: "Item", unitPrice: money(cents, "USD") });
@@ -77,6 +77,27 @@ describe("pricing", () => {
       const breakdown = total(createCart("USD"), fiveDollars, "US-CA");
       expect(breakdown.total.amount).toBe(0);
       expect(breakdown.discount.amount).toBe(0);
+    });
+  });
+
+  describe("coupon validation", () => {
+    it("accepts sensible coupons", () => {
+      expect(() => validateCoupon(tenOff)).not.toThrow();
+      expect(() => validateCoupon({ ...tenOff, percent: 100 })).not.toThrow();
+      expect(() => validateCoupon(fiveDollars)).not.toThrow();
+    });
+
+    it("rejects percentages outside (0, 100]", () => {
+      expect(() => validateCoupon({ ...tenOff, percent: 0 })).toThrow(RangeError);
+      expect(() => validateCoupon({ ...tenOff, percent: 150 })).toThrow(RangeError);
+    });
+
+    it("rejects fixed coupons worth nothing", () => {
+      expect(() => validateCoupon({ ...fiveDollars, amount: money(0, "USD") })).toThrow(RangeError);
+    });
+
+    it("validates before pricing", () => {
+      expect(() => total(cartOf(10_000), { ...tenOff, percent: -5 }, "US-NY")).toThrow(/TIDE10/);
     });
   });
 });

@@ -29,6 +29,16 @@ export function taxRate(region: Region): number {
   return TAX_RATES[region];
 }
 
+/** Throws if a coupon could never be valid, whatever it is applied to. */
+export function validateCoupon(coupon: Coupon): void {
+  if (coupon.kind === "percent" && !(coupon.percent > 0 && coupon.percent <= 100)) {
+    throw new RangeError(`Coupon ${coupon.code} must take off between 0 and 100 percent`);
+  }
+  if (coupon.kind === "fixed" && coupon.amount.amount <= 0) {
+    throw new RangeError(`Coupon ${coupon.code} must take off a positive amount`);
+  }
+}
+
 /** How much a coupon takes off the given amount. Never more than the amount itself. */
 export function discountFor(coupon: Coupon, base: Money): Money {
   switch (coupon.kind) {
@@ -40,6 +50,9 @@ export function discountFor(coupon: Coupon, base: Money): Money {
 }
 
 export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceBreakdown {
+  if (coupon) {
+    validateCoupon(coupon);
+  }
   if (coupon?.kind === "fixed" && coupon.amount.currency !== cart.currency) {
     throw new TypeError(`Coupon ${coupon.code} is in ${coupon.amount.currency}, cart is in ${cart.currency}`);
   }
