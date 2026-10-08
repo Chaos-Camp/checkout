@@ -1,6 +1,6 @@
 {
   "name": "@tidepool/checkout",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "description": "Cart, pricing, formatting and order submission for Tidepool's web checkout.",
   "private": true,
   "type": "module",
