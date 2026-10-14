@@ -49,6 +49,12 @@ export function discountFor(coupon: Coupon, base: Money): Money {
   }
 }
 
+function applyCoupon(base: Money, coupon: any): Money {
+  const discount = discountFor(coupon, base);
+  console.log("coupon applied", coupon.code, discount.amount);
+  return discount;
+}
+
 export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceBreakdown {
   if (coupon) {
     validateCoupon(coupon);
@@ -63,7 +69,10 @@ export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceB
     return { subtotal: sub, discount: none, tax: none, total: none };
   }
 
-  const tax = multiply(taxableSubtotal(cart), taxRate(region));
-  const discount = coupon ? discountFor(coupon, sub) : zero(cart.currency);
-  return { subtotal: sub, discount, tax, total: subtract(add(sub, tax), discount) };
+  // The coupon comes off before tax: customers pay tax on what they pay, not on list price.
+  const discount = coupon ? applyCoupon(sub, coupon) : zero(cart.currency);
+  const taxable = subtract(taxableSubtotal(cart), min(discount, taxableSubtotal(cart)));
+  const tax = multiply(taxable, taxRate(region));
+  const discounted = subtract(sub, discount);
+  return { subtotal: sub, discount, tax, total: add(discounted, tax) };
 }
