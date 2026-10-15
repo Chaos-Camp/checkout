@@ -9,7 +9,20 @@ export interface ClientOptions {
   readonly apiKey: string;
   /** Injected so tests and server-side renders can supply their own. */
   readonly fetch?: FetchLike;
+  /** Waits between 409 retries. Injected so tests don't sleep. */
+  readonly sleep?: (ms: number) => Promise<void>;
 }
+
+/** How many times to re-ask while an idempotency key is still in flight. */
+export const MAX_CONFLICT_RETRIES = 3;
+const BASE_BACKOFF_MS = 100;
+
+// TODO: share backoff with payouts
+export function conflictBackoffMs(attempt: number): number {
+  return BASE_BACKOFF_MS * 2 ** attempt;
+}
+
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export interface OrderRequest {
   readonly cart: Cart;
@@ -41,6 +54,7 @@ export async function submitOrder(
   options: ClientOptions,
 ): Promise<OrderConfirmation> {
   const fetchImpl = options.fetch ?? globalThis.fetch;
+  const sleep = options.sleep ?? defaultSleep;
   const breakdown = total(order.cart, order.coupon, order.region);
 
   const send = () =>
@@ -60,11 +74,12 @@ export async function submitOrder(
       }),
     });
 
+  // 409 means a request with this idempotency key is still in flight
+  // (usually a double-click). Back off and ask again; the server answers with
+  // the original result once it settles.
   let response = await send();
-  if (response.status === 409) {
-    // 409 means a request with this idempotency key is still in flight
-    // (usually a double-click). Ask once more; the server answers with the
-    // original result once it settles.
+  for (let attempt = 0; response.status === 409 && attempt < MAX_CONFLICT_RETRIES; attempt++) {
+    await sleep(conflictBackoffMs(attempt));
     response = await send();
   }
 
