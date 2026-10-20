@@ -53,13 +53,20 @@ describe("pricing", () => {
     it("takes a percentage off", () => {
       const breakdown = total(cartOf(10_000), tenOff, "US-NY");
       expect(breakdown.discount.amount).toBe(1000);
-      expect(breakdown.total.amount).toBe(9400);
+      expect(breakdown.total.amount).toBe(9360);
+    });
+
+    it.only("charges tax on the discounted amount, not the list price", () => {
+      const breakdown = total(cartOf(8000), tenOff, "US-CA");
+      expect(breakdown.discount.amount).toBe(800);
+      expect(breakdown.tax.amount).toBe(522);
+      expect(breakdown.total.amount).toBe(7722);
     });
 
     it("takes a fixed amount off", () => {
       const breakdown = total(cartOf(10_000), fiveDollars, "US-NY");
       expect(breakdown.discount.amount).toBe(500);
-      expect(breakdown.total.amount).toBe(9900);
+      expect(breakdown.total.amount).toBe(9880);
     });
 
     it("never discounts more than the subtotal", () => {

@@ -1,5 +1,5 @@
 import { isEmpty, subtotal, taxableSubtotal, type Cart } from "./cart.js";
-import { add, min, multiply, subtract, zero, type Money } from "./money.js";
+import { add, min, money, multiply, subtract, zero, type Money } from "./money.js";
 
 export type Region = "US-CA" | "US-NY" | "US-OR" | "CA-ON" | "GB" | "DE" | "JP";
 
@@ -49,6 +49,19 @@ export function discountFor(coupon: Coupon, base: Money): Money {
   }
 }
 
+/** Tax on an amount. Japan truncates consumption tax to the yen; everywhere else rounds. */
+function taxOn(amount: Money, region: Region): Money {
+  const raw = amount.amount * taxRate(region);
+  const rounded = region === "JP" ? Math.floor(raw) : Math.round(raw);
+  return money(rounded, amount.currency);
+}
+
+function applyCoupon(base: Money, coupon: any): Money {
+  const discount = discountFor(coupon, base);
+  console.log("coupon applied", coupon.code, discount.amount);
+  return discount;
+}
+
 export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceBreakdown {
   if (coupon) {
     validateCoupon(coupon);
@@ -63,7 +76,17 @@ export function total(cart: Cart, coupon: Coupon | null, region: Region): PriceB
     return { subtotal: sub, discount: none, tax: none, total: none };
   }
 
-  const tax = multiply(taxableSubtotal(cart), taxRate(region));
-  const discount = coupon ? discountFor(coupon, sub) : zero(cart.currency);
-  return { subtotal: sub, discount, tax, total: subtract(add(sub, tax), discount) };
+  // The coupon comes off before tax: customers pay tax on what they pay, not on list price.
+  const discount = coupon ? applyCoupon(sub, coupon) : zero(cart.currency);
+  const taxable = subtract(taxableSubtotal(cart), min(discount, taxableSubtotal(cart)));
+  const tax = taxOn(taxable, region);
+  const discounted = subtract(sub, discount);
+  return {
+    subtotal: sub,
+    discount,
+    tax,
+    total: add(discounted, tax),
+    // @ts-ignore
+    appliedCoupon: coupon?.code ?? null,
+  };
 }
